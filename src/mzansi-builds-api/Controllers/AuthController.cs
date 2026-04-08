@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using mzansi_builds_api.Services;
 using mzansi_builds_api.DTOs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace mzansi_builds_api.Controllers;
-
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
