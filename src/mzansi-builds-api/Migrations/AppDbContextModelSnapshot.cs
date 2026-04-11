@@ -37,25 +37,22 @@ namespace mzansi_builds_api.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-<<<<<<< HEAD
-                    b.Property<int>("OwnerId")
-                        .HasColumnType("int");
-=======
+
+
                     b.Property<bool>("IsFullyCompleted")
                         .HasColumnType("bit");
->>>>>>> de313b0a83413e0f894c94718f819616237932ae
+
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-<<<<<<< HEAD
-=======
+
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
->>>>>>> de313b0a83413e0f894c94718f819616237932ae
+
                     b.HasKey("Id");
 
                     b.ToTable("Projects");
@@ -74,12 +71,9 @@ namespace mzansi_builds_api.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-<<<<<<< HEAD
-                        .HasColumnType("nvarchar(max)");
-=======
+
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
->>>>>>> de313b0a83413e0f894c94718f819616237932ae
 
                     b.Property<int>("ProjectId")
                         .HasColumnType("int");
@@ -92,11 +86,9 @@ namespace mzansi_builds_api.Migrations
 
                     b.HasIndex("ProjectId");
 
-<<<<<<< HEAD
-                    b.ToTable("ProjectStage");
-=======
+
                     b.ToTable("ProjectStages");
->>>>>>> de313b0a83413e0f894c94718f819616237932ae
+
                 });
 
             modelBuilder.Entity("mzansi_builds_api.Models.User", b =>
@@ -128,20 +120,17 @@ namespace mzansi_builds_api.Migrations
 
             modelBuilder.Entity("mzansi_builds_api.Models.ProjectStage", b =>
                 {
-<<<<<<< HEAD
-                    b.HasOne("mzansi_builds_api.Models.Project", null)
-=======
+
                     b.HasOne("mzansi_builds_api.Models.Project", "Project")
->>>>>>> de313b0a83413e0f894c94718f819616237932ae
+
                         .WithMany("Stages")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-<<<<<<< HEAD
-=======
+
 
                     b.Navigation("Project");
->>>>>>> de313b0a83413e0f894c94718f819616237932ae
+
                 });
 
             modelBuilder.Entity("mzansi_builds_api.Models.Project", b =>

@@ -7,6 +7,7 @@ using System.Text;
 using Microsoft.OpenApi.Models; // Required for Swagger security definitions
 
 var builder = WebApplication.CreateBuilder(args);
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 // 1. Database
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -74,34 +75,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-// 5. Swagger
-builder.Services.AddSwaggerGen(options =>
-{
-    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Mzansi Builds API", Version = "v1" });
-
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        // Changed to SecuritySchemeType.Http to better support the "Bearer" prefix in Swagger UI
-        Type = SecuritySchemeType.Http,
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Input your JWT token only (do not type 'Bearer ' manually)."
-    });
-
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
-            },
-            Array.Empty<string>()
-        }
-    });
-});
-
 var app = builder.Build();
 
 // --- MIDDLEWARE ORDER ---
@@ -112,14 +85,15 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// 1. CORS first
+app.UseHttpsRedirection();
+
+// CORS must be before Auth
 app.UseCors("AllowAll");
 
-// 2. Auth (Authentication MUST come before Authorization)
+// Auth MUST be in this specific order
 app.UseAuthentication();
 app.UseAuthorization();
 
-// 3. Endpoints
 app.MapControllers();
 
 app.Run();
