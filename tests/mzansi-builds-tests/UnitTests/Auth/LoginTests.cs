@@ -1,7 +1,5 @@
-﻿using Xunit;
+﻿using mzansi_builds_api.DTOs.User;
 using mzansi_builds_api.Services;
-using mzansi_builds_api.DTOs;
-using Microsoft.Extensions.Configuration;
 
 namespace mzansi_builds_tests.UnitTests.Auth;
 

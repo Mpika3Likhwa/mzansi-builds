@@ -1,7 +1,34 @@
 ﻿@page "/"
+@rendermode InteractiveServer
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Mzansi Builds</PageTitle>
 
-<h1>Hello, world!</h1>
+<section class="container py-5">
+    <div class="row align-items-center">
+        <div class="col-lg-7">
+            <h1 class="display-3 fw-bold" style="color:var(--mz-white);">Mzansi Builds</h1>
+            <p class="lead" style="color:var(--mz-muted-text); max-width: 56ch;">
+                Build, share and discover local software projects. Join a growing community of South African
+                developers — showcase your work, find collaborators, and learn from real projects.
+            </p>
 
-Welcome to your new app.
+            <div class="mt-4">
+                <a class="btn btn-mzansi-green btn-lg me-2" href="/register" role="button" aria-label="Register for Mzansi Builds">Get started</a>
+                <a class="btn btn-outline-light btn-lg" href="/login" role="button" aria-label="Sign in to Mzansi Builds">Sign in</a>
+            </div>
+
+            <ul class="mt-5" style="color:var(--mz-white);">
+                <li class="mb-2"><strong style="color:var(--mz-green);">Discover</strong> curated local projects and demos.</li>
+                <li class="mb-2"><strong style="color:var(--mz-green);">Share</strong> your work and get feedback from peers.</li>
+                <li><strong style="color:var(--mz-green);">Collaborate</strong> with other builders across South Africa.</li>
+            </ul>
+        </div>
+
+        <div class="col-lg-5 d-none d-lg-block">
+            <div class="p-4 form-dark-card">
+                <h4 style="color:var(--mz-white);">Quick preview</h4>
+                <p style="color:var(--mz-muted-text);">A sample project feed, profiles and simple collaboration tools will appear here.</p>
+            </div>
+        </div>
+    </div>
+</section>

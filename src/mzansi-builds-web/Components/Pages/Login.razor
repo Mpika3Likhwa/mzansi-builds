@@ -1,0 +1,66 @@
+﻿@page "/login"
+@rendermode InteractiveServer
+@inject NavigationManager Nav
+
+<div class="container mt-5">
+    <div class="row justify-content-center pt-5">
+        <div class="col-md-5 form-dark-card p-5">
+            <h2 class="text-center mb-4 font-weight-bold" style="color: var(--mz-white);">Join Mzansi Builds</h2>
+
+            <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+                <DataAnnotationsValidator />
+
+                <div class="mb-3">
+                    <label class="form-label text-muted">Email Address</label>
+                    <InputText @bind-Value="loginModel.Email" class="form-control form-control-dark" placeholder="email@example.com" />
+                    <ValidationMessage For="@(() => loginModel.Email)" class="text-danger" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-muted">Password</label>
+                    <InputText @bind-Value="loginModel.Password" type="password" class="form-control form-control-dark" />
+                    <ValidationMessage For="@(() => loginModel.Password)" class="text-danger" />
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger bg-danger text-white border-0">@errorMessage</div>
+                }
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-mzansi-green w-100 py-2" disabled="@isSubmitting">
+                        @(isSubmitting ? "Signing in..." : "Sign In")
+                    </button>
+                </div>
+            </EditForm>
+
+            <div class="mt-4 text-center">
+                <small class="text-muted">Don't have an account? <a href="/register" class="mzansi-link">Register here</a></small>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginDto loginModel = new();
+    private bool isSubmitting = false;
+    private string? errorMessage;
+
+    private async Task HandleLogin()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+        await Task.Delay(800);
+
+        // Console output for debugging
+        Console.WriteLine($"Login attempt: {loginModel.Email}");
+
+        isSubmitting = false;
+    }
+
+    public class LoginDto
+    {
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
+}

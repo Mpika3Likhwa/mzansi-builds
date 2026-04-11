@@ -4,12 +4,11 @@ using Microsoft.IdentityModel.Tokens;
 using mzansi_builds_api.Data;
 using mzansi_builds_api.Services;
 using System.Text;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Models; // Required for Swagger security definitions
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Database & Connection
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// 1. Database
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
@@ -17,44 +16,54 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<ProjectService>(); // Don't forget to register your new service!
 
-// 3. JWT Authentication Setup
-// Extracting keys safely to ensure they exist before the app starts
-var jwtKey = builder.Configuration["Jwt:Key"]
-    ?? throw new InvalidOperationException("JWT Key is missing from configuration.");
-var jwtIssuer = builder.Configuration["Jwt:Issuer"];
-var jwtAudience = builder.Configuration["Jwt:Audience"];
-
-builder.Services.AddAuthentication(options =>
+// 3. Swagger Configuration (Adding the Authorize button back)
+builder.Services.AddSwaggerGen(options =>
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtIssuer,
-        ValidAudience = jwtAudience,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-        ClockSkew = TimeSpan.Zero // Removes the 5-minute default grace period for token expiry
-    };
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Mzansi Builds API", Version = "v1" });
 
-    options.Events = new JwtBearerEvents
+    // Define the Bearer Auth scheme
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        OnAuthenticationFailed = context =>
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Paste your JWT token below. You do NOT need to type 'Bearer ' manually."
+    });
+
+    // Make Swagger use that scheme for all endpoints
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
         {
-            Console.WriteLine("JWT Auth Failed: " + context.Exception.Message);
-            return Task.CompletedTask;
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
         }
-    };
+    });
 });
 
-// 4. CORS
+// 4. Authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+        };
+    });
+
+// 5. CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>

@@ -1,11 +1,11 @@
 ﻿using mzansi_builds_api.Data;
 using mzansi_builds_api.Models;
-using mzansi_builds_api.DTOs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using mzansi_builds_api.DTOs.User;
 
 namespace mzansi_builds_api.Services;
 

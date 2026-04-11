@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace mzansi_builds_api.DTOs;
+namespace mzansi_builds_api.DTOs.User;
 public class UserRegistrationDto
 {
     [Required]

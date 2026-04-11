@@ -1,0 +1,74 @@
+﻿@page "/register"
+@rendermode InteractiveServer
+@inject NavigationManager Nav
+
+<div class="container mt-5">
+    <div class="row justify-content-center pt-5">
+        <div class="col-md-5 form-dark-card p-5">
+            <h2 class="text-center mb-4 font-weight-bold" style="color: var(--mz-white);">Join Mzansi Builds</h2>
+
+            <EditForm Model="@regModel" OnValidSubmit="HandleRegistration">
+                <DataAnnotationsValidator />
+
+                <div class="mb-3">
+                    <label class="form-label text-muted">Username</label>
+                    <InputText @bind-Value="regModel.Username" class="form-control form-control-dark" placeholder="Choose a cool dev name" />
+                    <ValidationMessage For="@(() => regModel.Username)" class="text-danger" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-muted">Email Address</label>
+                    <InputText @bind-Value="regModel.Email" class="form-control form-control-dark" placeholder="email@example.com" />
+                    <ValidationMessage For="@(() => regModel.Email)" class="text-danger" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-muted">Password</label>
+                    <InputText @bind-Value="regModel.Password" type="password" class="form-control form-control-dark" />
+                    <ValidationMessage For="@(() => regModel.Password)" class="text-danger" />
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger bg-danger text-white border-0">@errorMessage</div>
+                }
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-mzansi-green w-100 py-2" disabled="@isSubmitting">
+                        @(isSubmitting ? "Creating account..." : "Sign Up")
+                    </button>
+                </div>
+            </EditForm>
+
+            <div class="mt-4 text-center">
+                <small class="text-muted">Already have an account? <a href="/login" class="mzansi-link">Login here</a></small>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private StaticUserDto regModel = new();
+    private bool isSubmitting = false;
+    private string? errorMessage;
+
+    private async Task HandleRegistration()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+        await Task.Delay(800);
+        bool fakeSuccess = true;
+        if (fakeSuccess)
+        {
+            Console.WriteLine("Register submitted");
+        }
+        isSubmitting = false;
+    }
+
+    public class StaticUserDto
+    {
+        public string Username { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
+}

@@ -20,4 +20,12 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="DTOs\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\mzansi-builds-api\mzansi-builds-api.csproj" />
+  </ItemGroup>
+
 </Project>
