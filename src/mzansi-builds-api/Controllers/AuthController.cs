@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using mzansi_builds_api.Services;
-using mzansi_builds_api.DTOs;
+using mzansi_builds_api.DTOs.User;
 
 namespace mzansi_builds_api.Controllers;
 

@@ -1,0 +1,133 @@
+:root {
+    /* Core theme colors */
+    --mz-black: #07140b;
+    --mz-dark-card: rgba(18,22,19,0.60); /* semi-transparent so gradient shows through */
+    --mz-border: rgba(255,255,255,0.06);
+    --mz-green: #12d06a;
+    --mz-green-hover: #3ffb94;
+    --mz-input-bg: rgba(15,22,18,0.18);
+    --mz-muted-text: #bfcfc0;
+    --mz-white: #f5f7f6;
+}
+
+/* Full-bleed background gradient that covers the viewport and stays fixed */
+html, body {
+    height: 100%;
+    margin: 0;
+    background-color: var(--mz-black);
+    background-image: radial-gradient(circle at 85% 8%, rgba(18,208,106,0.22) 0%, rgba(6,28,12,0.65) 45%, rgba(7,20,11,1) 100%);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    color: var(--mz-white);
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* Ensure layout wrappers do not introduce a solid background that hides the gradient */
+.page,
+main,
+section,
+.container,
+.container-fluid,
+.row,
+.col,
+[class*="col-"],
+.top-row,
+.sidebar,
+.article,
+.content,
+article {
+    background: transparent !important;
+}
+
+/* Allow page to expand so the gradient covers full height */
+.page {
+    min-height: 100vh;
+}
+
+/* Ensure primary readable text is white */
+body,
+h1, h2, h3, h4, h5, h6,
+p, a, label, .form-label,
+.navbar-brand, .nav-link,
+.content, .validation-message {
+    color: var(--mz-white);
+}
+
+/* Muted labels/reduced emphasis */
+.text-muted,
+.form-label.text-muted {
+    color: var(--mz-muted-text) !important;
+}
+
+/* Card used by forms - semi-transparent so gradient continues behind the card */
+.form-dark-card {
+    background-color: var(--mz-dark-card);
+    border: 1px solid var(--mz-border);
+    border-radius: 12px;
+    box-shadow: 0 8px 40px rgba(18,208,106,0.06);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    background-clip: padding-box;
+}
+
+/* Make horizontal rules and subtle borders visible on dark background */
+hr {
+    border-color: rgba(255,255,255,0.08);
+}
+
+/* Buttons */
+.btn-mzansi-green {
+    background-color: var(--mz-green);
+    border-color: var(--mz-green);
+    color: #000;
+    font-weight: 600;
+    transition: all 0.18s ease;
+}
+
+.btn-mzansi-green:hover {
+    background-color: var(--mz-green-hover);
+    border-color: var(--mz-green-hover);
+    color: #000;
+    transform: translateY(-2px);
+}
+
+/* Inputs for dark theme - make lines visible (lighter borders) */
+.form-control-dark {
+    background-color: var(--mz-input-bg);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--mz-white);
+    caret-color: var(--mz-green);
+}
+
+.form-control-dark::placeholder {
+    color: rgba(245,247,246,0.55);
+}
+
+.form-control-dark:focus {
+    background-color: transparent;
+    border-color: var(--mz-green);
+    color: var(--mz-white);
+    box-shadow: 0 0 0 0.25rem rgba(18,208,106,0.12);
+}
+
+/* Links */
+.mzansi-link {
+    color: var(--mz-green);
+    text-decoration: none;
+}
+
+.mzansi-link:hover {
+    text-decoration: underline;
+    color: var(--mz-green-hover);
+}
+
+/* Small adjustments for content area to avoid being hidden under navbar */
+.content {
+    padding-top: 1.1rem;
+}
+
+/* Keep validation style distinct */
+.validation-message {
+    color: #ff6b6b;
+}
