@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: windows-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -23,11 +23,17 @@ jobs:
         with:
           dotnet-version: '8.x'
 
-      - name: Build with dotnet
-        run: dotnet build --configuration Release
+      # 1. Restore dependencies for the specific API project
+      - name: dotnet restore
+        run: dotnet restore src/mzansi-builds-api/mzansi-builds-api.csproj
 
+      # 2. Build the specific project
+      - name: Build with dotnet
+        run: dotnet build src/mzansi-builds-api/mzansi-builds-api.csproj --configuration Release --no-restore
+
+      # 3. Publish the API to the output folder
       - name: dotnet publish
-        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+        run: dotnet publish src/mzansi-builds-api/mzansi-builds-api.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -39,14 +45,15 @@ jobs:
     runs-on: windows-latest
     needs: build
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write 
+      contents: read 
 
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: .net-app
+          path: ./publish # Standardizing the download path
       
       - name: Login to Azure
         uses: azure/login@v2
@@ -61,5 +68,4 @@ jobs:
         with:
           app-name: 'mzansi-builds-api'
           slot-name: 'Production'
-          package: .
-          
+          package: ./publish # Matches the download path above
