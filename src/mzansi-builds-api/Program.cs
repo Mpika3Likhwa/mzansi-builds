@@ -4,37 +4,34 @@ using Microsoft.IdentityModel.Tokens;
 using mzansi_builds_api.Data;
 using mzansi_builds_api.Services;
 using System.Text;
-using Microsoft.OpenApi.Models; // Required for Swagger security definitions
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// 1. Database
+// 1. Database Configuration with Retry Logic
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection"),
         sqlServerOptionsAction: sqlOptions =>
         {
-            // This is the magic line that fixes the 40613 error
             sqlOptions.EnableRetryOnFailure(
                 maxRetryCount: 5,
                 maxRetryDelay: TimeSpan.FromSeconds(30),
                 errorNumbersToAdd: null);
         }));
 
-// 2. Services
+// 2. Dependency Injection
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<ProjectService>(); 
-builder.Services.AddScoped<CollaborationService>(); // Registered collaboration service
+builder.Services.AddScoped<ProjectService>();
+builder.Services.AddScoped<CollaborationService>();
 
-// 3. Swagger Configuration (Adding the Authorize button back)
+// 3. Swagger Configuration with JWT Authorize Button
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "Mzansi Builds API", Version = "v1" });
 
-    // Define the Bearer Auth scheme
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -45,7 +42,6 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Paste your JWT token below. You do NOT need to type 'Bearer ' manually."
     });
 
-    // Make Swagger use that scheme for all endpoints
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -58,7 +54,7 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// 4. Authentication
+// 4. Authentication & JWT Validation
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -74,7 +70,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// 5. CORS
+// 5. CORS Policy
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -87,16 +83,14 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Seed the database
+// 6. Database Migration & Seeding
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
         var context = services.GetRequiredService<AppDbContext>();
-        // Automatically apply any pending migrations
         await context.Database.MigrateAsync();
-        // Seed the data
         await DbInitializer.SeedData(context);
     }
     catch (Exception ex)
@@ -106,29 +100,23 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// --- MIDDLEWARE ORDER ---
+// --- UPDATED SWAGGER MIDDLEWARE ---
 
-if (app.Environment.IsDevelopment())
+// This ensures Swagger works exactly like your reference project
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-if(app.Environment.IsProduction()) {
-    // Place this directly after builder.Build() but before app.Run()
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
-        options.RoutePrefix = string.Empty; // This serves Swagger at https://your-app.azurewebsites.net/
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Mzansi Builds API v1");
 
-    app.UseHttpsRedirection();
+    // Setting this to "swagger" creates a predictable URL for people to follow
+    c.RoutePrefix = "swagger";
+});
 
-// CORS must be before Auth
+// --- REMAINING MIDDLEWARE ---
+
+app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 
-// Auth MUST be in this specific order
 app.UseAuthentication();
 app.UseAuthorization();
 
