@@ -10,4 +10,7 @@ public class AppDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Project> Projects { get; set; }
     public DbSet<ProjectStage> ProjectStages { get; set; }
+
+    // Added CollaborationRequests DbSet
+    public DbSet<CollaborationRequest> CollaborationRequests { get; set; }
 }

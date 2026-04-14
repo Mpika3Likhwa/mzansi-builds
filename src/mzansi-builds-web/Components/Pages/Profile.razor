@@ -1,0 +1,337 @@
+﻿@page "/profile"
+@rendermode InteractiveServer
+
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using mzansi_builds_api.DTOs.Project
+@using mzansi_builds_api.DTOs.Collaboration
+@using mzansi_builds_web.Services
+
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ProjectService ProjectService
+@inject CollaborationService CollabService
+@inject AuthService AuthService
+@inject IJSRuntime JS
+
+<PageTitle>My Profile</PageTitle>
+
+<section class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+
+            @* Header Section *@
+            <div class="form-dark-card p-4 mb-4 shadow-sm">
+                <div class="d-flex align-items-start">
+                    <div class="me-4">
+                        <div class="profile-avatar">@GetInitials(username)</div>
+                    </div>
+
+                    <div class="flex-fill">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h2 class="mb-1" style="color:var(--mz-white);">@username</h2>
+                                <div class="text-muted small mb-2">@email</div>
+                                <p class="text-muted mb-2" style="max-width: 70ch;">
+                                    Software and Machine Learning Engineer. Building Mzansi through code.
+                                </p>
+                            </div>
+
+                            <div class="text-end d-none d-sm-block">
+                                <div class="small text-muted">Status</div>
+                                <div class="text-success pulse-text fw-bold">Active Builder</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Stats Section *@
+            <div class="d-flex gap-3 mb-4">
+                <div class="form-dark-card p-3 flex-fill small-stat text-center">
+                    <div class="text-muted small text-uppercase fw-bold">Projects</div>
+                    <div class="h4 mb-0 text-white">@projects.Count</div>
+                </div>
+
+                <div class="form-dark-card p-3 flex-fill small-stat text-center">
+                    <div class="text-muted small text-uppercase fw-bold">Avg. Progress</div>
+                    <div class="h4 mb-0 text-success">@(projects.Any() ? (int)projects.Average(p => p.ProgressPercentage) : 0)%</div>
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap align-items-center mb-4 gap-2">
+    <h4 class="me-auto mb-0" style="color:var(--mz-white);">My Projects</h4>
+    
+    <div class="d-flex gap-2">
+        <a class="btn btn-mzansi-dark shadow-sm px-3 fw-bold" href="/feed">
+            <i class="bi bi-grid-1x2 me-1"></i> Feed
+        </a>
+        
+        <a class="btn btn-mzansi-dark shadow-sm px-3 fw-bold" href="/manage-requests">
+            <i class="bi bi-envelope-paper me-1"></i> Requests
+        </a>
+
+        <a class="btn btn-mzansi-green shadow-sm px-3 fw-bold" href="/projects/new">
+            <i class="bi bi-plus-circle me-1"></i> New Project
+        </a>
+    </div>
+</div>
+
+            @if (isLoading)
+            {
+                <div class="text-center p-5"><div class="spinner-border text-success"></div></div>
+            }
+            else
+            {
+                <div class="project-wall">
+                    @foreach (var p in projects)
+                    {
+                        @* Calculate pending requests for this specific project *@
+                        var pendingCount = projectRequests.ContainsKey(p.Id) 
+                            ? projectRequests[p.Id].Count(r => r.Status == "Pending") 
+                            : 0;
+
+                        <div class="form-dark-card mb-4 p-4 border-0 shadow">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h4 class="mb-1 fw-bold" style="color:var(--mz-white);">@p.Title</h4>
+                                    <div class="small text-muted"><i class="bi bi-calendar3 me-1"></i> Created: @p.CreatedAt.ToShortDateString()</div>
+                                </div>
+                                
+                                @if (pendingCount > 0)
+                                {
+                                    <div class="badge bg-danger p-2 shadow-sm pulse-badge">
+                                        <i class="bi bi-lightning-fill me-1"></i> @pendingCount New Request@(pendingCount > 1 ? "s" : "")
+                                    </div>
+                                }
+                            </div>
+
+                            <p class="text-muted mt-3 mb-3">@p.Description</p>
+
+                            @* Progress Tracking *@
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between">
+                                    <label class="text-muted small mb-1">Build Progress</label>
+                                    <label class="text-success small mb-1 fw-bold">@p.ProgressPercentage%</label>
+                                </div>
+                                <div class="progress shadow-sm" style="height:8px; background-color:#222; border-radius: 10px;">
+                                    <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" style="width: @p.ProgressPercentage%;"></div>
+                                </div>
+                            </div>
+
+                            @* Expanded Interaction Buttons *@
+                            <div class="d-flex gap-3 pt-2 border-top border-secondary">
+                                <button class="btn btn-sm btn-outline-light flex-grow-1 py-2" @onclick="(() => ToggleRoadmap(p.Id))">
+                                    <i class="bi bi-map me-1"></i>
+                                    @(roadmapExpanded.Contains(p.Id) ? "Hide Roadmap" : "View Roadmap")
+                                </button>
+                                
+                                <button class="btn btn-sm @(pendingCount > 0 ? "btn-mzansi-green text-dark fw-bold" : "btn-mzansi-dark") flex-grow-1 py-2" 
+                                        @onclick="(() => ToggleRequests(p.Id))">
+                                    <i class="bi bi-people-fill me-1"></i>
+                                    Manage Requests
+                                </button>
+                            </div>
+
+                            @* Roadmap Content *@
+                            @if (roadmapExpanded.Contains(p.Id))
+                            {
+                                <div class="mt-4 pt-3 border-top border-secondary animate-fade-in">
+                                    <h6 class="text-white small text-uppercase fw-bold mb-3">Project Roadmap</h6>
+                                    <ul class="list-group list-group-flush">
+                                        @foreach (var s in p.Stages)
+                                        {
+                                            <li class="list-group-item bg-transparent text-muted border-0 ps-0 mb-2">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span class="@(s.IsCompleted ? "text-success" : "text-white")">
+                                                        <i class="bi @(s.IsCompleted ? "bi-check-circle-fill" : "bi-circle") me-2"></i> @s.Name
+                                                    </span>
+
+                                                    @if (!s.IsCompleted)
+                                                    {
+                                                        <button class="btn btn-sm btn-mzansi-green py-0 px-2"
+                                                                style="font-size: 0.75rem;"
+                                                                @onclick="(() => HandleCompleteStage(s.Id))">
+                                                            Mark as Done
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
+
+                            @* Collaboration Requests Content *@
+                            @if (requestsExpanded.Contains(p.Id))
+                            {
+                                <div class="mt-4 pt-3 border-top border-secondary animate-fade-in">
+                                    <h6 class="text-mzansi-green small text-uppercase fw-bold mb-3">Pending Handshakes</h6>
+                                    
+                                    @if (projectRequests.ContainsKey(p.Id) && projectRequests[p.Id].Any())
+                                    {
+                                        <div class="list-group">
+                                            @foreach (var req in projectRequests[p.Id])
+                                            {
+                                                <div class="list-group-item bg-mzansi-darker border-secondary mb-3 rounded shadow-sm">
+                                                    <div class="d-flex justify-content-between align-items-start">
+                                                        <div class="flex-fill">
+                                                            <div class="text-white fw-bold">@@@req.RequesterName</div>
+                                                            <div class="text-muted extra-small mb-2">Sent on @req.CreatedAt.ToShortDateString()</div>
+                                                            <p class="text-light-50 small italic mb-0">"@req.Message"</p>
+                                                        </div>
+                                                        <div class="ms-3 d-flex flex-column gap-1">
+                                                            @if (req.Status == "Pending")
+                                                            {
+                                                                <button class="btn btn-sm btn-success fw-bold px-3" @onclick="() => HandleAcceptRequest(req)">Accept</button>
+                                                                <button class="btn btn-sm btn-outline-danger" @onclick="() => HandleDeclineRequest(req.Id)">Decline</button>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="badge @(req.Status == "Accepted" ? "bg-success" : "bg-secondary")">@req.Status</span>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-muted small py-3 text-center border border-secondary border-dashed rounded">
+                                            <i class="bi bi-inbox me-1"></i> No builders have requested to join this build yet.
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    private List<ProjectResponseDto> projects = new();
+    private HashSet<int> roadmapExpanded = new();
+    private HashSet<int> requestsExpanded = new();
+    private Dictionary<int, List<CollaborationRequestResponseDto>> projectRequests = new();
+    
+    private string username = "Developer";
+    private string email = "";
+    private bool isLoading = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await AuthService.InitializeAsync();
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (user.Identity == null || !user.Identity.IsAuthenticated)
+            {
+                NavigationManager.NavigateTo("/login");
+                return;
+            }
+
+            username = user.Identity.Name ?? "Developer";
+            email = user.FindFirst(ClaimTypes.Email)?.Value ?? "";
+
+            await RefreshProjects();
+            await LoadAllReceivedRequests();
+        }
+    }
+
+    private async Task RefreshProjects()
+    {
+        isLoading = true;
+        projects = await ProjectService.GetMyProjectsAsync();
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task LoadAllReceivedRequests()
+    {
+        // Do fetch all received requests and group them by project ID
+        var allRequests = await CollabService.GetReceivedRequestsAsync();
+        projectRequests = allRequests.GroupBy(r => r.ProjectId)
+                                     .ToDictionary(g => g.Key, g => g.ToList());
+        StateHasChanged();
+    }
+
+    private void ToggleRoadmap(int projectId)
+    {
+        if (roadmapExpanded.Contains(projectId)) roadmapExpanded.Remove(projectId);
+        else roadmapExpanded.Add(projectId);
+    }
+
+    private void ToggleRequests(int projectId)
+    {
+        if (requestsExpanded.Contains(projectId)) requestsExpanded.Remove(projectId);
+        else requestsExpanded.Add(projectId);
+    }
+
+    private async Task HandleAcceptRequest(CollaborationRequestResponseDto req)
+    {
+        // Do prompt for GitHub Token to trigger Octokit invitation
+        var token = await JS.InvokeAsync<string>("prompt", $"Enter your GitHub Token to invite @{req.RequesterUserId}:");
+        
+        if (string.IsNullOrWhiteSpace(token)) return;
+
+        var success = await CollabService.AcceptRequestAsync(req.Id, token);
+        if (success)
+        {
+            await JS.InvokeVoidAsync("alert", "Invitation successfully sent on GitHub!");
+            await LoadAllReceivedRequests();
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("alert", CollabService.LastMessage ?? "GitHub invitation failed. Check your token permissions.");
+        }
+    }
+
+    private async Task HandleDeclineRequest(int requestId)
+    {
+        var success = await CollabService.DeclineRequestAsync(requestId);
+        if (success) await LoadAllReceivedRequests();
+    }
+
+    private async Task HandleCompleteStage(int stageId)
+    {
+        var success = await ProjectService.CompleteStageAsync(stageId);
+        if (success) await RefreshProjects();
+        else await JS.InvokeVoidAsync("alert", ProjectService.LastMessage ?? "Failed to update stage.");
+    }
+
+    private string GetInitials(string name) => string.IsNullOrWhiteSpace(name) ? "MB" : name.Substring(0, Math.Min(2, name.Length)).ToUpper();
+}
+
+<style>
+    .bg-mzansi-darker { background-color: #0c0c0c; }
+    .italic { font-style: italic; }
+    .extra-small { font-size: 0.7rem; }
+    .text-light-50 { color: rgba(255,255,255,0.7); }
+    
+    /* Do highlight new requests with a pulse animation */
+    .pulse-badge { animation: pulse-bg 2s infinite; }
+
+    @((MarkupString)"@keyframes pulse-bg { 0% { transform: scale(1); } 50% { transform: scale(1.05); box-shadow: 0 0 10px rgba(220, 53, 69, 0.5); } 100% { transform: scale(1); } }")
+    @((MarkupString)"@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }")
+    @((MarkupString)"@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }")
+    
+    .pulse-text { animation: pulse 2s infinite; }
+    .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+
+    .btn-mzansi-dark {
+        background-color: #1a1a1a;
+        border: 1px solid #333;
+        color: white;
+    }
+
+    .btn-mzansi-dark:hover {
+        background-color: #252525;
+        border-color: var(--mzansi-green);
+    }
+</style>
