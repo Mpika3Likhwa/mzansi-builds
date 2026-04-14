@@ -87,6 +87,25 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Seed the database
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<AppDbContext>();
+        // Automatically apply any pending migrations
+        await context.Database.MigrateAsync();
+        // Seed the data
+        await DbInitializer.SeedData(context);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred during database seeding.");
+    }
+}
+
 // --- MIDDLEWARE ORDER ---
 
 if (app.Environment.IsDevelopment())
@@ -94,8 +113,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else {
+    // Place this directly after builder.Build() but before app.Run()
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
+        options.RoutePrefix = string.Empty; // This serves Swagger at https://your-app.azurewebsites.net/
+    });
+}
 
-app.UseHttpsRedirection();
+    app.UseHttpsRedirection();
 
 // CORS must be before Auth
 app.UseCors("AllowAll");
