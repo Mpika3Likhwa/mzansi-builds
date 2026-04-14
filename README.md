@@ -6,8 +6,10 @@ Mzansi Build is a centralized platform designed for developers to showcase activ
 ---
 
 ## Live Access
-- **Application URL:** [Insert Your Hosted URL Here]
-- **API Documentation:** [Insert Swagger/API URL Here]
+To facilitate an easy demonstration of the system's functionality and architectural integration, the application has been deployed using Microsoft Azure services.
+
+* **Web Application URL:** [Insert Your Hosted Azure Web App URL Here]
+* **API Swagger Documentation:** [Insert Your Azure API/Swagger URL Here]
 
 ---
 
@@ -40,11 +42,12 @@ Due to the constraints of the project timeline, the following features were not 
 ---
 
 ## Technical Stack
-- **Frontend:** Blazor (Interactive Server Mode)
-- **Backend:** ASP.NET Core 8 Web API
-- **Database:** Entity Framework Core (SQL Server)
-- **Styling:** Custom CSS (Mzansi Theme: Green, White, Black) and Bootstrap 5
-- **Icons:** Bootstrap Icons
+* **Hosting:** Microsoft Azure (App Services)
+* **Frontend:** Blazor (Interactive Server Mode)
+* **Backend:** ASP.NET Core 8 Web API
+* **Database:** Entity Framework Core (SQL Server)
+* **Styling:** Custom CSS (Mzansi Theme: Green, White, Black) and Bootstrap 5
+* **Icons:** Bootstrap Icons
 
 ---
 
