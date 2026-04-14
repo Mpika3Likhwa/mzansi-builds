@@ -1,3 +1,6 @@
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
 name: Build and deploy ASP.Net Core app to Azure Web App - mzansi-builds-web
 
 on:
@@ -22,21 +25,24 @@ jobs:
         with:
           dotnet-version: '8.x'
 
+      # 1. Restore specific Web project
       - name: dotnet restore
         run: dotnet restore src/mzansi-builds-web/mzansi-builds-web.csproj
 
+      # 2. Build specific Web project
       - name: Build with dotnet
         run: dotnet build src/mzansi-builds-web/mzansi-builds-web.csproj --configuration Release --no-restore
 
-      # FIX: Publish to a local 'publish' folder instead of DOTNET_ROOT
+      # 3. Publish to the stable DOTNET_ROOT path (Matches API logic)
       - name: dotnet publish
-        run: dotnet publish src/mzansi-builds-web/mzansi-builds-web.csproj -c Release -o ./publish-output
+        run: dotnet publish src/mzansi-builds-web/mzansi-builds-web.csproj -c Release -o "${{env.DOTNET_ROOT}}/mywebapp"
 
+      # 4. Upload from the same DOTNET_ROOT path
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: web-app-artifact
-          path: ./publish-output
+          path: ${{env.DOTNET_ROOT}}/mywebapp
 
   deploy:
     runs-on: windows-latest
@@ -50,7 +56,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: web-app-artifact
-          path: ./deployment-package
+          path: ./publish-web # Standardizing path name
       
       - name: Login to Azure
         uses: azure/login@v2
@@ -64,4 +70,4 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'mzansi-builds-web'
-          package: ./deployment-package
+          package: ./publish-web
