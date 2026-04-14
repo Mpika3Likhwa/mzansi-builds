@@ -13,13 +13,10 @@ namespace mzansi_builds_api.Models
         [StringLength(100)]
         public string Name { get; set; } = string.Empty;
 
-        // Added to fulfill the requirement: "including stage and support required"
-        [Required]
-        public string SupportRequired { get; set; } = string.Empty;
+        public string? SupportRequired { get; set; } = string.Empty;
 
         public bool IsCompleted { get; set; } = false;
 
-        // Foreign Key
         public int ProjectId { get; set; }
 
         [ForeignKey("ProjectId")]

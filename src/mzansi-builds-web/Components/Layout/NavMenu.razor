@@ -1,4 +1,10 @@
-﻿<nav class="navbar navbar-expand-lg navbar-dark mzansi-navbar">
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using mzansi_builds_web.Services
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+<nav class="navbar navbar-expand-lg navbar-dark mzansi-navbar">
     <div class="container-fluid">
         <a class="navbar-brand mzansi-brand" href="/">
             <span class="mzansi-logo" aria-hidden="true"></span>
@@ -10,21 +16,89 @@
             <span class="navbar-toggler-icon"></span>
         </button>
 
-        <div class="collapse navbar-collapse justify-content-center" id="mainNavbar">
-            <ul class="navbar-nav navbar-center mx-auto mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">Home</NavLink>
-                </li>
+        <div class="collapse navbar-collapse" id="mainNavbar">
+            <AuthorizeView>
+                <NotAuthorized>
+                    @* No nav links for anonymous users as requested *@
+                </NotAuthorized>
 
-                <li class="nav-item">
-                    <NavLink class="nav-link" href="register">Register</NavLink>
-                </li>
+                <Authorized Context="context">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
+                        <li class="nav-item">
+                            <NavLink class="nav-link mz-nav-link" href="feed">
+                                <i class="bi bi-grid-1x2 me-1"></i> Feed
+                            </NavLink>
+                        </li>
+                        <li class="nav-item">
+                            <NavLink class="nav-link mz-nav-link" href="profile">
+                                <i class="bi bi-person-badge me-1"></i> Profile
+                            </NavLink>
+                        </li>
+                    </ul>
 
-                <li class="nav-item">
-                    <NavLink class="nav-link" href="login">Login</NavLink>
-                </li>
-            </ul>
+                    <div class="d-flex align-items-center gap-3 justify-content-end">
+                        <span class="small text-muted d-none d-sm-inline">
+                            Hello, <strong class="text-white">@(context.User.Identity?.Name ?? "Developer")</strong>
+                        </span>
+
+                        <button class="btn btn-outline-danger btn-sm px-3" @onclick="HandleLogout">
+                            <i class="bi bi-box-arrow-right me-1"></i> Logout
+                        </button>
+                    </div>
+                </Authorized>
+            </AuthorizeView>
         </div>
     </div>
 </nav>
 
+@code {
+    private async Task HandleLogout()
+    {
+        // 1. Clear the token from storage
+        await AuthService.Logout();
+
+        // 2. Notify the state provider so the UI hides the protected links immediately
+        if (AuthStateProvider is CustomAuthStateProvider customProvider)
+        {
+            customProvider.NotifyUserLogout();
+        }
+
+        // 3. Send the user back to the landing page
+        NavigationManager.NavigateTo("/");
+
+        await Task.CompletedTask;
+    }
+}
+
+<style>
+    .mzansi-navbar {
+        background-color: #0d0d0d;
+        border-bottom: 1px solid #222;
+        padding: 0.8rem 1rem;
+    }
+
+    .mz-nav-link {
+        color: #aaa !important;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        margin: 0 0.5rem;
+    }
+
+        .mz-nav-link:hover, .mz-nav-link.active {
+            color: #2ecc71 !important; /* Mzansi Green */
+        }
+
+        .mz-nav-link.active {
+            border-bottom: 2px solid #2ecc71;
+        }
+
+    .btn-outline-danger {
+        border-color: #dc3545;
+        color: #dc3545;
+    }
+
+        .btn-outline-danger:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+</style>

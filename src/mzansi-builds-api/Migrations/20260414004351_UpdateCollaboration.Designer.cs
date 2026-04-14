@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using mzansi_builds_api.Data;
 
@@ -11,9 +12,11 @@ using mzansi_builds_api.Data;
 namespace mzansi_builds_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260414004351_UpdateCollaboration")]
+    partial class UpdateCollaboration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -72,8 +75,6 @@ namespace mzansi_builds_api.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-
-
                     b.Property<bool>("IsFullyCompleted")
                         .HasColumnType("bit");
 
@@ -84,11 +85,9 @@ namespace mzansi_builds_api.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
 
                     b.HasKey("Id");
 
@@ -108,7 +107,6 @@ namespace mzansi_builds_api.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -122,9 +120,7 @@ namespace mzansi_builds_api.Migrations
 
                     b.HasIndex("ProjectId");
 
-
                     b.ToTable("ProjectStages");
-
                 });
 
             modelBuilder.Entity("mzansi_builds_api.Models.User", b =>
@@ -170,17 +166,13 @@ namespace mzansi_builds_api.Migrations
 
             modelBuilder.Entity("mzansi_builds_api.Models.ProjectStage", b =>
                 {
-
                     b.HasOne("mzansi_builds_api.Models.Project", "Project")
-
                         .WithMany("Stages")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-
                     b.Navigation("Project");
-
                 });
 
             modelBuilder.Entity("mzansi_builds_api.Models.Project", b =>

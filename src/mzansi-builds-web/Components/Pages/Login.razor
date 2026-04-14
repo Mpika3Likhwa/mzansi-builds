@@ -1,66 +1,155 @@
 ﻿@page "/login"
 @rendermode InteractiveServer
-@inject NavigationManager Nav
 
-<div class="container mt-5">
+@using Microsoft.AspNetCore.Components.Authorization
+@using mzansi_builds_api.DTOs.User
+@inject mzansi_builds_web.Services.AuthService AuthService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Login</PageTitle>
+
+<section class="container mt-5">
     <div class="row justify-content-center pt-5">
         <div class="col-md-5 form-dark-card p-5">
             <h2 class="text-center mb-4 font-weight-bold" style="color: var(--mz-white);">Join Mzansi Builds</h2>
 
-            <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+            <EditForm Model="@loginModel" OnValidSubmit="HandleValidSubmit">
                 <DataAnnotationsValidator />
 
                 <div class="mb-3">
-                    <label class="form-label text-muted">Email Address</label>
-                    <InputText @bind-Value="loginModel.Email" class="form-control form-control-dark" placeholder="email@example.com" />
+                    <label class="form-label text-muted small">Email Address</label>
+                    <InputText type="email"
+                               class="form-control form-control-dark"
+                               @bind-Value="loginModel.Email"
+                               placeholder="email@example.com"
+                               disabled="@isWorking" />
                     <ValidationMessage For="@(() => loginModel.Email)" class="text-danger" />
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label text-muted">Password</label>
-                    <InputText @bind-Value="loginModel.Password" type="password" class="form-control form-control-dark" />
+                <div class="mb-4">
+                    <label class="form-label text-muted small">Password</label>
+                    <InputText type="password"
+                               class="form-control form-control-dark"
+                               @bind-Value="loginModel.Password"
+                               disabled="@isWorking" />
                     <ValidationMessage For="@(() => loginModel.Password)" class="text-danger" />
                 </div>
 
-                @if (!string.IsNullOrEmpty(errorMessage))
+                @if (!string.IsNullOrEmpty(notificationMessage))
                 {
-                    <div class="alert alert-danger bg-danger text-white border-0">@errorMessage</div>
+                    <div class="mt-3 alert @(isError ? "alert-danger bg-danger text-white border-0" : "alert-success bg-success text-white border-0") shadow-sm">
+                        @notificationMessage
+                    </div>
                 }
 
                 <div class="mt-4">
-                    <button type="submit" class="btn btn-mzansi-green w-100 py-2" disabled="@isSubmitting">
-                        @(isSubmitting ? "Signing in..." : "Sign In")
+                    <button type="submit" class="btn btn-mzansi-green w-100 py-2 fw-bold" disabled="@isWorking">
+                        @if (isWorking)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        
+                            <span>Signing in...</span>
+                        }
+                        else
+                        {
+                            <span>Sign In</span>
+                        }
                     </button>
                 </div>
             </EditForm>
 
+            @* I made sure the class "mzansi-link" is correctly applied here *@
             <div class="mt-4 text-center">
-                <small class="text-muted">Don't have an account? <a href="/register" class="mzansi-link">Register here</a></small>
+                <p class="text-muted small">
+                    Don't have an account? <a href="/register" class="mzansi-link fw-bold">Register here</a>
+                </p>
             </div>
         </div>
     </div>
-</div>
+</section>
 
 @code {
-    private LoginDto loginModel = new();
-    private bool isSubmitting = false;
-    private string? errorMessage;
+    private UserLoginDto loginModel = new();
+    private bool isWorking;
+    private bool isError;
+    private string? notificationMessage;
 
-    private async Task HandleLogin()
+    private async Task HandleValidSubmit()
     {
-        isSubmitting = true;
-        errorMessage = null;
-        await Task.Delay(800);
+        isWorking = true;
+        isError = false;
+        notificationMessage = null;
 
-        // Console output for debugging
-        Console.WriteLine($"Login attempt: {loginModel.Email}");
+        try
+        {
+            var ok = await AuthService.LoginAsync(loginModel);
+            if (ok)
+            {
+                if (AuthStateProvider is mzansi_builds_web.Services.CustomAuthStateProvider customProvider)
+                {
+                    customProvider.NotifyUserAuthentication();
+                }
 
-        isSubmitting = false;
-    }
-
-    public class LoginDto
-    {
-        public string Email { get; set; } = "";
-        public string Password { get; set; } = "";
+                notificationMessage = AuthService.LastMessage ?? "Login successful.";
+                await Task.Yield();
+                NavigationManager.NavigateTo("/feed");
+            }
+            else
+            {
+                isError = true;
+                notificationMessage = AuthService.LastMessage ?? "Login failed. Check email and password.";
+            }
+        }
+        catch (Exception ex)
+        {
+            isError = true;
+            notificationMessage = $"An error occurred: {ex.Message}";
+        }
+        finally
+        {
+            isWorking = false;
+        }
     }
 }
+
+<style>
+    .form-dark-card {
+        background-color: #121212;
+        border: 1px solid #333;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+
+    .form-control-dark {
+        background-color: #0d0d0d !important;
+        border: 1px solid #444 !important;
+        color: white !important;
+        caret-color: var(--mzansi-green);
+    }
+
+        /* Autofill fix */
+        .form-control-dark:-webkit-autofill {
+            -webkit-text-fill-color: white !important;
+            -webkit-box-shadow: 0 0 0px 1000px #0d0d0d inset !important;
+        }
+
+        .form-control-dark:focus {
+            background-color: #0d0d0d !important;
+            color: white !important;
+            border-color: var(--mzansi-green) !important;
+            box-shadow: 0 0 0 0.25rem rgba(46, 204, 113, 0.2) !important;
+        }
+
+    /* REINFORCED LINK COLOR */
+    .mzansi-link {
+        color: #2ecc71 !important; /* Forcing the brand green */
+        text-decoration: none;
+        transition: 0.2s;
+    }
+
+        .mzansi-link:hover {
+            color: #27ae60 !important;
+            text-decoration: underline;
+        }
+</style>

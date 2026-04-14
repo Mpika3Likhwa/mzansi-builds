@@ -17,7 +17,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<ProjectService>(); // Don't forget to register your new service!
+builder.Services.AddScoped<ProjectService>(); 
+builder.Services.AddScoped<CollaborationService>(); // Registered collaboration service
 
 // 3. Swagger Configuration (Adding the Authorize button back)
 builder.Services.AddSwaggerGen(options =>

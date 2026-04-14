@@ -1,0 +1,160 @@
+﻿@page "/manage-requests"
+@rendermode InteractiveServer
+
+@using mzansi_builds_api.DTOs.Collaboration
+@using mzansi_builds_web.Services
+@using Microsoft.AspNetCore.Components.Authorization
+
+@inject CollaborationService CollabService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Manage Requests</PageTitle>
+
+<section class="container mt-5">
+    <div class="d-flex align-items-center mb-4">
+        <button class="btn btn-mzansi-dark me-3" @onclick='() => NavigationManager.NavigateTo("/feed")'>
+            <i class="bi bi-arrow-left"></i>
+        </button>
+        <h2 class="mb-0 text-white fw-bold">Collaboration Outbox</h2>
+    </div>
+
+    <div class="form-dark-card p-4">
+        <h5 class="text-muted mb-4">Requests Sent to Other Builders</h5>
+
+        @if (isLoading)
+        {
+            <div class="text-center p-5">
+                <div class="spinner-border text-success"></div>
+                <p class="text-muted mt-2">Retrieving your handshake history...</p>
+            </div>
+        }
+        else if (!sentRequests.Any())
+        {
+            <div class="text-center p-5">
+                <i class="bi bi-send-x h1 text-muted"></i>
+                <p class="text-muted mt-3">You haven't sent any collaboration requests yet.</p>
+                <a href="/feed" class="btn btn-mzansi-green btn-sm mt-2">Explore Projects</a>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-dark table-hover border-secondary">
+                    <thead>
+                        <tr class="text-muted small text-uppercase">
+                            <th>Project</th>
+                            <th>Status</th>
+                            <th>Sent Date</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var req in sentRequests)
+                        {
+                            <tr>
+                                <td class="align-middle">
+                                    <span class="text-white fw-bold">@req.ProjectTitle</span>
+                                </td>
+                                <td class="align-middle">
+                                    <span class="badge @GetStatusClass(req.Status)">
+                                        @req.Status
+                                    </span>
+                                </td>
+                                <td class="align-middle text-muted small">
+                                    @req.CreatedAt.ToString("MMM dd, yyyy")
+                                </td>
+                                <td class="text-end align-middle">
+                                    @if (req.Status == "Pending")
+                                    {
+                                        <button class="btn btn-sm btn-outline-danger"
+                                                @onclick="() => HandleWithdraw(req.Id)"
+                                                disabled="@isProcessing">
+                                            Withdraw
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">No actions available</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    private List<CollaborationRequestResponseDto> sentRequests = new();
+    private bool isLoading = true;
+    private bool isProcessing = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Verify authentication
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            if (!authState.User.Identity?.IsAuthenticated ?? false)
+            {
+                NavigationManager.NavigateTo("/login");
+                return;
+            }
+
+            // Load the sent requests
+            await LoadSentRequests();
+        }
+    }
+
+    private async Task LoadSentRequests()
+    {
+        isLoading = true;
+        sentRequests = await CollabService.GetMySentRequestsAsync();
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task HandleWithdraw(int requestId)
+    {
+        isProcessing = true;
+
+        // Call service to delete the request record
+        var success = await CollabService.WithdrawRequestAsync(requestId);
+
+        if (success)
+        {
+            // Refresh list to show the request is gone
+            await LoadSentRequests();
+        }
+
+        isProcessing = false;
+    }
+
+    private string GetStatusClass(string status) => status switch
+    {
+        "Pending" => "bg-warning text-dark",
+        "Accepted" => "bg-success text-white",
+        "Declined" => "bg-danger text-white",
+        _ => "bg-secondary"
+    };
+}
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: rgba(255,255,255,0.03);
+    }
+
+    .btn-mzansi-dark {
+        background-color: #1a1a1a;
+        border: 1px solid #333;
+        color: white;
+    }
+
+    .badge {
+        font-weight: 500;
+        padding: 0.5em 0.8em;
+    }
+</style>

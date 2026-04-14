@@ -12,4 +12,6 @@ public class AppDbContext : DbContext
     public DbSet<Project> Projects { get; set; }
     public DbSet<ProjectStage> ProjectStages { get; set; }
 
+    // Added CollaborationRequests DbSet
+    public DbSet<CollaborationRequest> CollaborationRequests { get; set; }
 }
