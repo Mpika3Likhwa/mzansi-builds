@@ -12,8 +12,8 @@ using mzansi_builds_api.Data;
 namespace mzansi_builds_api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260414004351_UpdateCollaboration")]
-    partial class UpdateCollaboration
+    [Migration("20260414151103_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

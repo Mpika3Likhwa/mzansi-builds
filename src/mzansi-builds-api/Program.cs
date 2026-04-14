@@ -11,7 +11,16 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 // 1. Database
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlServerOptionsAction: sqlOptions =>
+        {
+            // This is the magic line that fixes the 40613 error
+            sqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(30),
+                errorNumbersToAdd: null);
+        }));
 
 // 2. Services
 builder.Services.AddControllers();

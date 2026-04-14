@@ -1,10 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>mzansi_builds_api</RootNamespace>
+    <UserSecretsId>34a60555-2813-4dc6-9218-8a8a2eebdc44</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

@@ -72,8 +72,6 @@ namespace mzansi_builds_api.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-
-
                     b.Property<bool>("IsFullyCompleted")
                         .HasColumnType("bit");
 
@@ -84,11 +82,9 @@ namespace mzansi_builds_api.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
 
                     b.HasKey("Id");
 
@@ -108,7 +104,6 @@ namespace mzansi_builds_api.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -122,9 +117,7 @@ namespace mzansi_builds_api.Migrations
 
                     b.HasIndex("ProjectId");
 
-
                     b.ToTable("ProjectStages");
-
                 });
 
             modelBuilder.Entity("mzansi_builds_api.Models.User", b =>
@@ -170,17 +163,13 @@ namespace mzansi_builds_api.Migrations
 
             modelBuilder.Entity("mzansi_builds_api.Models.ProjectStage", b =>
                 {
-
                     b.HasOne("mzansi_builds_api.Models.Project", "Project")
-
                         .WithMany("Stages")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-
                     b.Navigation("Project");
-
                 });
 
             modelBuilder.Entity("mzansi_builds_api.Models.Project", b =>
