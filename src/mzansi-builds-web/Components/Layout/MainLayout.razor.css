@@ -1,47 +1,29 @@
-    /* Make layout wrappers transparent so the global gradient shows through */
-.sidebar {
-    background: rgba(10,12,10,0.18); /* slight tint so links remain readable, still translucent */
-    border-right: 1px solid rgba(255,255,255,0.03);
-}
-
-.top-row {
-    background: transparent;
-    border-bottom: 1px solid rgba(255,255,255,0.02);
-    justify-content: flex-end;
-}
-
-/* Keep top-row links green and visible */
-.top-row ::deep a,
-.top-row .btn-link {
-    color: var(--mz-green);
-    text-decoration: none;
-}
-
-/* Adjust nav hover/active to work on translucent sidebar */
-.nav-item ::deep a:hover {
-    background-color: rgba(18,208,106,0.06); /* subtle green glow on hover */
-    color: var(--mz-green-hover);
-}
-
-.nav-item ::deep a.active {
-    background-color: rgba(18,208,106,0.08);
-    color: var(--mz-white);
-    border-left: 4px solid var(--mz-green);
-}
-
-/* Remove page background override so the gradient is visible */
+/* Ensure the page flows vertically since we are using a top bar now */
 .page {
-    background: transparent;
-    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Ensure the top-row and nav items remain readable on the gradient */
-.top-row ::deep a,
-.sidebar ::deep a,
-.sidebar ::deep .nav-link {
-    color: var(--mz-white);
+main {
+    flex: 1;
 }
 
-/* If you prefer a fully transparent sidebar, set background to transparent instead:
-   .sidebar { background: transparent; border-right: 1px solid rgba(255,255,255,0.03); }
-*/
+.content {
+    padding-top: 1.5rem;
+}
+
+/* If the default Blazor CSS is forcing a sidebar on desktop, 
+   we override it to display as a standard block */
+@media (min-width: 641px) {
+    .page {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        display: none; /* We are using the Top NavMenu instead */
+    }
+
+    .top-row {
+        display: none; /* Hide the default top-row since we have a custom Navbar */
+    }
+}

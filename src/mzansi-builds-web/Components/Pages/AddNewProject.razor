@@ -1,0 +1,255 @@
+﻿@page "/projects/new"
+@rendermode InteractiveServer
+
+@using mzansi_builds_api.DTOs.Project
+@using mzansi_builds_api.DTOs.ProjectStage
+@using Microsoft.AspNetCore.Components.Authorization
+@inject mzansi_builds_web.Services.ProjectService ProjectService
+@inject mzansi_builds_web.Services.AuthService AuthService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Add Project</PageTitle>
+
+<section class="container mt-5">
+    <div class="row justify-content-center pt-5">
+        <div class="col-md-8 form-dark-card p-5 mb-5 shadow-lg">
+            <h2 class="text-center mb-4 font-weight-bold" style="color: var(--mz-white);">Create a new project</h2>
+
+            <EditForm Model="@model" OnValidSubmit="HandleCreateProject">
+                <DataAnnotationsValidator />
+
+                <div class="mb-3">
+                    <label class="form-label text-muted">Title</label>
+                    <InputText class="form-control form-control-dark"
+                               @bind-Value="model.Title"
+                               placeholder="Project title"
+                               disabled="@isWorking" />
+                    <ValidationMessage For="@(() => model.Title)" class="text-danger" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-muted">Description (Optional)</label>
+                    <InputTextArea class="form-control form-control-dark"
+                                   @bind-Value="model.Description"
+                                   rows="4"
+                                   placeholder="Short description of the project"
+                                   disabled="@isWorking" />
+                    <ValidationMessage For="@(() => model.Description)" class="text-danger" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-muted">GitHub Repository URL</label>
+                    <InputText class="form-control form-control-dark"
+                               @bind-Value="model.GitHubRepoUrl"
+                               placeholder="https://github.com/username/repo"
+                               disabled="@isWorking" />
+                    <ValidationMessage For="@(() => model.GitHubRepoUrl)" class="text-danger" />
+                </div>
+
+                <div class="form-check mb-4">
+                    <InputCheckbox class="form-check-input" @bind-Value="model.IsGitHubRepoPrivate" disabled="@isWorking" />
+                    <label class="form-check-label text-muted">Private repository</label>
+                </div>
+
+                <hr class="border-secondary mb-4" />
+
+                <h5 class="text-muted mb-3">Roadmap / Stages</h5>
+
+                @for (int i = 0; i < model.Stages.Count; i++)
+                {
+                    var index = i;
+                    <div class="stage-card mb-4 p-4 shadow-sm">
+                        @* Create stage inputs *@
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">Stage name</label>
+                            <InputText class="form-control form-control-dark"
+                                       @bind-Value="model.Stages[index].Name"
+                                       placeholder="e.g. Authentication"
+                                       disabled="@isWorking" />
+                            <ValidationMessage For="@(() => model.Stages[index].Name)" class="text-danger" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">Support required (Optional)</label>
+                            <InputTextArea class="form-control form-control-dark"
+                                           @bind-Value="model.Stages[index].SupportRequired"
+                                           rows="2"
+                                           placeholder="Describe help needed"
+                                           disabled="@isWorking" />
+                            <ValidationMessage For="@(() => model.Stages[index].SupportRequired)" class="text-danger" />
+                        </div>
+
+                        @* Create remove button at bottom center *@
+                        <div class="d-flex justify-content-center mt-2">
+                            <button type="button"
+                                    class="btn btn-remove-stage-pill"
+                                    @onclick="(() => RemoveStage(index))"
+                                    disabled="@isWorking">
+                                <i class="bi bi-trash3 me-1"></i> Remove This Stage
+                            </button>
+                        </div>
+                    </div>
+                }
+
+                <div class="mt-4 d-flex gap-3">
+                    <button type="button" class="btn btn-mzansi-dark flex-fill py-2" @onclick="AddStage" disabled="@isWorking">
+                        <i class="bi bi-plus-circle me-1"></i> Add Stage
+                    </button>
+
+                    <button type="submit" class="btn btn-mzansi-green flex-fill py-2 fw-bold" disabled="@isWorking">
+                        @if (isWorking)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                            <span>Launching...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-rocket-takeoff me-1"></i>
+                            <span>Launch Project</span>
+                        }
+                    </button>
+                </div>
+
+                @if (!string.IsNullOrEmpty(notificationMessage))
+                {
+                    <div class="mt-4 alert @(isError ? "alert-danger bg-danger text-white border-0" : "alert-success bg-success text-white border-0") shadow">
+                        @notificationMessage
+                    </div>
+                }
+            </EditForm>
+        </div>
+    </div>
+</section>
+
+@code {
+    private CreateProjectDto model = new();
+    private bool isWorking;
+    private bool isError;
+    private string? notificationMessage;
+
+    protected override void OnInitialized()
+    {
+        model = new CreateProjectDto();
+        model.Stages.Add(new CreateStageDto());
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await AuthService.InitializeAsync();
+            if (!AuthService.IsAuthenticated)
+            {
+                NavigationManager.NavigateTo("/login");
+            }
+        }
+    }
+
+    private void AddStage() => model.Stages.Add(new CreateStageDto());
+
+    private void RemoveStage(int index)
+    {
+        if (index >= 0 && index < model.Stages.Count)
+        {
+            model.Stages.RemoveAt(index);
+            // Do ensure at least one stage exists
+            if (model.Stages.Count == 0) model.Stages.Add(new CreateStageDto());
+        }
+    }
+
+    private async Task HandleCreateProject()
+    {
+        isWorking = true;
+        isError = false;
+        notificationMessage = null;
+
+        try
+        {
+            var ok = await ProjectService.CreateProjectAsync(model);
+            if (ok)
+            {
+                notificationMessage = "Project launched successfully!";
+                await Task.Delay(1500);
+                NavigationManager.NavigateTo("/feed");
+            }
+            else
+            {
+                isError = true;
+                notificationMessage = ProjectService.LastMessage ?? "Failed to launch project.";
+            }
+        }
+        catch (Exception ex)
+        {
+            isError = true;
+            notificationMessage = $"An error occurred: {ex.Message}";
+        }
+        finally
+        {
+            isWorking = false;
+        }
+    }
+}
+
+<style>
+    :root {
+        --mzansi-green: #2ecc71;
+    }
+
+    .form-dark-card {
+        background-color: #121212;
+        border: 1px solid #222;
+        border-radius: 12px;
+    }
+
+    .stage-card {
+        background-color: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 10px;
+    }
+
+    .form-control-dark {
+        background-color: #0d0d0d !important;
+        border: 1px solid #444 !important;
+        color: white !important;
+    }
+
+        .form-control-dark:focus {
+            border-color: var(--mzansi-green) !important;
+            box-shadow: 0 0 0 0.25rem rgba(46, 204, 113, 0.1) !important;
+        }
+
+    .btn-mzansi-dark {
+        background-color: #222;
+        border: 1px solid #444;
+        color: white;
+    }
+
+        .btn-mzansi-dark:hover {
+            background-color: #333;
+            color: var(--mzansi-green);
+        }
+
+    /* Style the new pill-shaped remove button */
+    .btn-remove-stage-pill {
+        background-color: rgba(220, 53, 69, 0.1);
+        border: 1px solid rgba(220, 53, 69, 0.3);
+        color: #ff4d4d;
+        font-size: 0.75rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        padding: 6px 16px;
+        border-radius: 50px;
+        transition: all 0.2s;
+    }
+
+        .btn-remove-stage-pill:hover {
+            background-color: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+
+        .btn-remove-stage-pill:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+</style>

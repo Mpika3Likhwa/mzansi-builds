@@ -1,4 +1,6 @@
-﻿using mzansi_builds_api.DTOs.ProjectStage;
+﻿using System;
+using System.Collections.Generic;
+using mzansi_builds_api.DTOs.ProjectStage;
 
 namespace mzansi_builds_api.DTOs.Project
 {
@@ -8,14 +10,14 @@ namespace mzansi_builds_api.DTOs.Project
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
 
-        // Audit & Ownership
         public string DeveloperId { get; set; } = string.Empty;
+        public string DeveloperName { get; set; } = string.Empty;
+
         public DateTime CreatedAt { get; set; }
-
-        // Status for the Celebration Wall
         public bool IsFullyCompleted { get; set; }
-
-        // The Roadmap
+        public string GitHubRepoUrl { get; set; } = string.Empty;
+        public bool IsGitHubRepoPrivate { get; set; }
         public List<StageResponseDto> Stages { get; set; } = new();
+        public int ProgressPercentage { get; set; } = 0;
     }
 }
