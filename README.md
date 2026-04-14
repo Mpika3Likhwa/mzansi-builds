@@ -9,7 +9,7 @@ Mzansi Build is a centralized platform designed for developers to showcase activ
 To facilitate an easy demonstration of the system's functionality and architectural integration, the application has been deployed using Microsoft Azure services.
 
 * **Web Application URL:** [Insert Your Hosted Azure Web App URL Here]
-* **API Swagger Documentation:** [[Insert Your Azure API/Swagger URL Here](https://mzansi-builds-api-e2g9fhhmbjf8fgaq.southafricanorth-01.azurewebsites.net/swagger/index.html)]
+* **API Swagger Documentation:** [[Swagger UI for the azure hosted API](https://mzansi-builds-api-e2g9fhhmbjf8fgaq.southafricanorth-01.azurewebsites.net/swagger/index.html)]
 
 ---
 
