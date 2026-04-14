@@ -8,22 +8,26 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest  # High-performance Linux VM
+    runs-on: ubuntu-latest
+    
+    # This spins up a real SQL Server in the cloud runner
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          SA_PASSWORD: Password123!
+          ACCEPT_EULA: Y
+        ports:
+          - 1433:1433
 
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Setup .NET SDK
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '8.0.x' # Matches your project version
-
-    - name: Restore Dependencies
-      run: dotnet restore
-
-    - name: Build Solution
-      run: dotnet build --no-restore --configuration Release
+    # ... setup and restore steps ...
 
     - name: Run Unit Tests
-      run: dotnet test --no-build --configuration Release --verbosity normal
+      run: dotnet test --no-build --configuration Release
+      env:
+        # Override the connection string to point to the container
+        ConnectionStrings__DefaultConnection: "Server=localhost;Database=TestDb;User Id=sa;Password=Password123!;Encrypt=False;"
