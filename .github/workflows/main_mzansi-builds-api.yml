@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # We can keep the build on Linux (it's faster/cheaper)
     permissions:
       contents: read
 
@@ -20,15 +20,12 @@ jobs:
         with:
           dotnet-version: '8.x'
 
-      # 1. Restore dependencies specifically for the API project
       - name: dotnet restore
         run: dotnet restore src/mzansi-builds-api/mzansi-builds-api.csproj
 
-      # 2. Build the specific project
       - name: Build with dotnet
         run: dotnet build src/mzansi-builds-api/mzansi-builds-api.csproj --configuration Release --no-restore
 
-      # 3. Publish only the API project to the output folder
       - name: dotnet publish
         run: dotnet publish src/mzansi-builds-api/mzansi-builds-api.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp
 
@@ -39,7 +36,7 @@ jobs:
           path: ${{env.DOTNET_ROOT}}/myapp
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest # CHANGED: Using Windows runner for a Windows App Service is often more reliable
     needs: build
     permissions:
       id-token: write 
@@ -50,7 +47,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: .net-app
-          path: ./publish # Explicitly setting a path makes deployment cleaner
+          path: ./publish 
       
       - name: Login to Azure
         uses: azure/login@v2
@@ -64,5 +61,5 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'mzansi-builds-api'
-          slot-name: 'Production'
-          package: ./publish # Matches the download path above
+          # No slot-name needed unless you explicitly created one
+          package: ./publish
