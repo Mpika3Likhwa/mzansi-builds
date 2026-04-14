@@ -113,7 +113,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-else {
+if(app.Environment.IsProduction()) {
     // Place this directly after builder.Build() but before app.Run()
     app.UseSwagger();
     app.UseSwaggerUI(options =>
