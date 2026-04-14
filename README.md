@@ -11,6 +11,8 @@ To facilitate an easy demonstration of the system's functionality and architectu
 * **Web Application URL:** having an unexpected problem deploying.... 
 * **API Swagger Documentation:** [[Swagger UI for the azure hosted API](https://mzansi-builds-api-e2g9fhhmbjf8fgaq.southafricanorth-01.azurewebsites.net/swagger/index.html)]
 
+FOR NOW:Run the web locally, it is connected to the api hosted on Azure
+
 ---
 
 ## Project Vision and Problem Statement
