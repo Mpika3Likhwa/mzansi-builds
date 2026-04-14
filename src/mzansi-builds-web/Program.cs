@@ -6,26 +6,31 @@ using System;
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. HttpClient Registration
-builder.Services.AddScoped(sp =>
+// For Blazor Server, it is standard to use AddHttpClient to manage the lifecycle better
+builder.Services.AddHttpClient("MzansiApi", client =>
 {
     var config = builder.Configuration["ApiBaseUrl"];
+
+    // Fallback logic: Use Azure Env Var if present, otherwise localhost
     var baseAddress = !string.IsNullOrWhiteSpace(config)
         ? new Uri(config)
-        : new Uri("https://localhost:7018/");
+        : new Uri("https://mzansi-builds-api-e2g9fhhmbjf8fgaq.southafricanorth-01.azurewebsites.net/");
 
-    return new HttpClient { BaseAddress = baseAddress };
+    client.BaseAddress = baseAddress;
 });
+
+// We still provide a scoped HttpClient for easy injection in your Services
+builder.Services.AddScoped(sp =>
+    sp.GetRequiredService<IHttpClientFactory>().CreateClient("MzansiApi"));
 
 // 2. Authentication & Authorization Core
 builder.Services.AddAuthorizationCore();
 builder.Services.AddCascadingAuthenticationState();
 
 // 3. Identity Services (The Handshake)
-// We register AuthService first so CustomAuthStateProvider can inject it.
 builder.Services.AddScoped<AuthService>();
 
-// CRITICAL: We register CustomAuthStateProvider, then tell Blazor 
-// that whenever it asks for 'AuthenticationStateProvider', it must use the Custom one.
+// Register CustomAuthStateProvider and link it to the base provider
 builder.Services.AddScoped<CustomAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
     sp.GetRequiredService<CustomAuthStateProvider>());
