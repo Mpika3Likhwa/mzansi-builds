@@ -7,15 +7,13 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'src/mzansi-builds-web/**'
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
     permissions:
-      contents: read
+      contents: read #This is required for actions/checkout
 
     steps:
       - uses: actions/checkout@v4
@@ -25,49 +23,43 @@ jobs:
         with:
           dotnet-version: '8.x'
 
-      # 1. Restore specific Web project
-      - name: dotnet restore
-        run: dotnet restore src/mzansi-builds-web/mzansi-builds-web.csproj
-
-      # 2. Build specific Web project
       - name: Build with dotnet
-        run: dotnet build src/mzansi-builds-web/mzansi-builds-web.csproj --configuration Release --no-restore
+        run: dotnet build --configuration Release
 
-      # 3. Publish to the stable DOTNET_ROOT path (Matches API logic)
       - name: dotnet publish
-        run: dotnet publish src/mzansi-builds-web/mzansi-builds-web.csproj -c Release -o "${{env.DOTNET_ROOT}}/mywebapp"
+        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
 
-      # 4. Upload from the same DOTNET_ROOT path
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
-          name: web-app-artifact
-          path: ${{env.DOTNET_ROOT}}/mywebapp
+          name: .net-app
+          path: ${{env.DOTNET_ROOT}}/myapp
 
   deploy:
     runs-on: windows-latest
     needs: build
     permissions:
-      id-token: write 
-      contents: read 
+      id-token: write #This is required for requesting the JWT
+      contents: read #This is required for actions/checkout
 
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: web-app-artifact
-          path: ./publish-web # Standardizing path name
+          name: .net-app
       
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_2D7231209F474DBFAC6AE4AB88446B1F }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_EAF0B954E41C4232A78DE7E8DA963860 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_71BFC795680F42A7AC697F4FBDCA5351 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_0089450FB9174C81B9CECDA7E9DB2142 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_E4E5451471EB4E088D7E2CD944D84FCB }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C2988728B454452783D019569832ECBD }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'mzansi-builds-web'
-          package: ./publish-web
+          slot-name: 'Production'
+          package: .
+          
