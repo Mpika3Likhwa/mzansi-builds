@@ -1,19 +1,18 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
 name: Build and deploy ASP.Net Core app to Azure Web App - mzansi-builds-web
 
 on:
   push:
     branches:
       - main
+    paths:
+      - 'src/mzansi-builds-web/**' # Only triggers when web project changes
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -23,30 +22,38 @@ jobs:
         with:
           dotnet-version: '8.x'
 
+      # 1. Restore specific project
+      - name: dotnet restore
+        run: dotnet restore src/mzansi-builds-web/mzansi-builds-web.csproj
+
+      # 2. Build specific project
       - name: Build with dotnet
-        run: dotnet build --configuration Release
+        run: dotnet build src/mzansi-builds-web/mzansi-builds-web.csproj --configuration Release --no-restore
 
+      # 3. Publish to a specific subfolder in the runner
       - name: dotnet publish
-        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+        run: dotnet publish src/mzansi-builds-web/mzansi-builds-web.csproj -c Release -o "${{env.DOTNET_ROOT}}/mzansi-web-publish"
 
+      # 4. Upload the published files
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
-          name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp
+          name: web-app-bundle
+          path: ${{env.DOTNET_ROOT}}/mzansi-web-publish
 
   deploy:
     runs-on: windows-latest
     needs: build
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write 
+      contents: read 
 
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: .net-app
+          name: web-app-bundle
+          path: ./publish-dir # Downloads files into this folder
       
       - name: Login to Azure
         uses: azure/login@v2
@@ -61,5 +68,4 @@ jobs:
         with:
           app-name: 'mzansi-builds-web'
           slot-name: 'Production'
-          package: .
-          
+          package: ./publish-dir # Points exactly to the downloaded files
