@@ -5,37 +5,29 @@ on:
     branches:
       - main
     paths:
-      - 'src/mzansi-builds-web/**' # Only triggers when web files change
+      - 'src/mzansi-builds-web/**'
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
-    permissions:
-      contents: read
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.x'
 
-      # 1. Restore the specific Web project
       - name: dotnet restore
         run: dotnet restore src/mzansi-builds-web/mzansi-builds-web.csproj
 
-      # 2. Build the specific Web project
       - name: Build with dotnet
         run: dotnet build src/mzansi-builds-web/mzansi-builds-web.csproj --configuration Release --no-restore
 
-      # 3. Publish to a specific subfolder (using DOTNET_ROOT for stability)
       - name: dotnet publish
         run: dotnet publish src/mzansi-builds-web/mzansi-builds-web.csproj -c Release -o "${{env.DOTNET_ROOT}}/mzansi-web-publish"
 
-      # 4. Upload ONLY the published files
-      - name: Upload artifact for deployment job
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: web-app-bundle
@@ -44,28 +36,17 @@ jobs:
   deploy:
     runs-on: windows-latest
     needs: build
-    permissions:
-      id-token: write 
-      contents: read 
-
     steps:
-      - name: Download artifact from build job
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: web-app-bundle
-          path: ./publish-dir # Standardizes where files land for the deploy step
+          path: ./publish-dir
       
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_AE1558353634493CB46ACD4D7C08E1CC }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_10CA45F7264347959196B1742222446B }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_F2F3B6CBAE3046E395B0A0496B937FDD }}
-
+      # NO LOGIN STEP NEEDED - The Publish Profile handles it below
       - name: Deploy to Azure Web App
-        id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'mzansi-builds-web'
-          slot-name: 'Production'
-          package: ./publish-dir # Tells Azure exactly where the .dll files are
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./publish-dir
